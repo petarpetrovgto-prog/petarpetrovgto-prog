@@ -3,50 +3,36 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>QuickTable UltraLite v42</title>
+<title>QuickTable UltraLite v43</title>
 <style>
   :root{
     --bg:#0b0f14; --panel:#0f1520; --panel2:#101827; --border:#223047; --text:#e7ecf3;
     --push:#6d4b8e; --mr:#c24a4a; --limp:#7fcf7f;
-    --gap:12px; --rankH:68px; /* фиксирана височина за прецизно позициониране */
+    --gap:12px; --rankH:68px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   body{margin:0;background:var(--bg);color:var(--text);font:15px/1.32 -apple-system,system-ui,Segoe UI,Roboto,Arial}
-
-  /* Top chips */
   .bar{position:sticky;top:0;z-index:30;background:#101827;border-bottom:1px solid var(--border);padding:6px 8px;display:flex;align-items:center;gap:8px;justify-content:space-between}
   .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   .chip{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
-
-  /* FAB: бутон „Ръка“ (вляво долу) */
+  /* FAB „Ръка“ – вляво долу */
   .fab{position:fixed;left:14px;bottom:14px;z-index:35;border:1px solid var(--border);background:#0f1624;color:var(--text);
         border-radius:14px;padding:14px 18px;font-weight:800;font-size:18px;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer}
 
-  /* Hand Builder overlay */
+  /* Hand Builder */
   .overlay{position:fixed;inset:0;background:#0b0f14;display:none;z-index:50;overflow-y:auto}
   .overlay.show{display:flex;flex-direction:column;justify-content:center;padding:26px 0}
   .hbBox{margin:0 auto;width:100%;max-width:620px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--panel2)}
   .hbHead{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border)}
   .hbInner{padding:16px;background:var(--panel)}
-
-  /* Grid: 5 колони рангове + 1 тясна S/O колона */
-  .hbGrid{display:grid;grid-template-columns:repeat(5,1fr) 66px;gap:var(--gap);align-items:start}
-  .rankGrid{grid-column:1/6;display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap)}
-  .rankBtn{border:1px solid var(--border);background:#142035;border-radius:14px;height:var(--rankH);font-weight:900;font-size:28px}
-  .rankBtn.active{outline:2px solid #4da3ff}
-
-  /* S/O колона – изместваме надолу: под реда с 6 и 5, вдясно от 2 */
-  .typeCol{grid-column:6;display:flex;flex-direction:column;gap:10px;
-           /* 2 реда височина + два промеждутъка → позиционира S/O под 6 и 5 */
-           margin-top: calc(2 * var(--rankH) + 2 * var(--gap));}
-  .typeBtn{border:1px solid var(--border);background:#111a2b;border-radius:12px;padding:14px 0;font-weight:800;font-size:18px}
-  .typeBtn.active{outline:2px solid #4da3ff}
-
+  .rankGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap);margin-bottom:14px}
+  .rankBtn,.typeBtn{border:1px solid var(--border);background:#142035;border-radius:14px;height:var(--rankH);font-weight:900;font-size:28px}
+  .typeBtn{background:#111a2b}
+  .rankBtn.active,.typeBtn.active{outline:2px solid #4da3ff}
   .bbHead{margin:12px 0 8px;font-size:15px;opacity:.85;text-align:center}
   .bbGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
   .bbBtn{border:1px solid var(--border);background:#1a2740;border-radius:12px;padding:20px 0;font-weight:900;font-size:20px}
   .bbBtn.active{outline:2px solid #4da3ff}
-
   .clearBtn{border:1px solid var(--border);background:#0f1624;border-radius:12px;padding:14px 0;font-weight:800;font-size:16px;width:100%}
 
   /* Results */
@@ -60,7 +46,7 @@
   .label{font-weight:800;font-size:14px}
   .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center;font-size:15px}
 
-  /* Editor overlay (textarea) */
+  /* Editor overlay */
   .editOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:60;align-items:center;justify-content:center;padding:16px}
   .editOverlay.show{display:flex}
   .editBox{width:100%;max-width:620px;background:#0f1520;border:1px solid var(--border);border-radius:14px;overflow:hidden}
@@ -81,7 +67,7 @@
     </div>
   </div>
 
-  <!-- FAB: Ръка (вляво долу) -->
+  <!-- FAB: Ръка (вляво) -->
   <button id="openHB" class="fab" type="button">Ръка</button>
 
   <!-- Hand Builder -->
@@ -92,17 +78,9 @@
         <button id="closeHB" class="btn" type="button" style="width:auto;padding:6px 10px;font-size:13px">X</button>
       </div>
       <div class="hbInner">
-        <div class="hbGrid">
-          <div class="rankGrid" id="rankGrid"></div>
-          <div class="typeCol">
-            <button class="typeBtn" data-type="s" type="button">S</button>
-            <button class="typeBtn" data-type="o" type="button">O</button>
-          </div>
-        </div>
-
+        <div class="rankGrid" id="rankGrid"></div>
         <div class="bbHead">Блайндове (1–15)</div>
         <div class="bbGrid" id="bbGrid"></div>
-
         <button id="clearHand" class="clearBtn" type="button">Изчисти</button>
       </div>
     </div>
@@ -155,8 +133,8 @@ default = 38"></textarea>
     return{d:act,c:null};};
 
   // База
-  let DB=JSON.parse(localStorage.getItem("qt_v42")||"{}");
-  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v42",JSON.stringify(DB))};
+  let DB=JSON.parse(localStorage.getItem("qt_v43")||"{}");
+  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v43",JSON.stringify(DB))};
   function parseRaw(raw,push=false){ if(!raw)return{def:null,map:{}}; let def=null,map={};
     raw.split(/\r?\n|;/).map(s=>s.trim()).filter(Boolean).forEach(line=>{
       const m=line.split("="); if(m.length===1){const v=m[0].trim(); if(!v)return; def=push?parseFloat(v):v.toUpperCase();}
@@ -179,32 +157,42 @@ default = 38"></textarea>
   const curHandEl=document.getElementById("curHand"), curStackEl=document.getElementById("curStack");
   const hb=document.getElementById("hb");
 
-  // Помощни
+  // Ръка като текст
   const handText=()=>{ if(!first||!second) return null; if(first===second) return first+second; return first+second+(type==="pair"?"":type||""); };
   const mapBB=n=>{n=+n; if(n<=4)return"0–4"; if(n<=7)return"4–7"; if(n<=10)return"7–10"; if(n<=13)return"10–13"; return"13+";};
 
-  // FAB
-  document.getElementById("openHB").addEventListener("click", ()=> hb.classList.add("show"));
+  // ОТВАРЯНЕ: винаги чист панел
+  document.getElementById("openHB").addEventListener("click", ()=>{ resetBuilder(true); hb.classList.add("show"); });
   document.getElementById("closeHB").addEventListener("click", ()=> hb.classList.remove("show"));
 
-  // Рангове
+  // Рангове + S/O в края на решетката
   const rankGrid=document.getElementById("rankGrid");
-  ranks.forEach(r=>{ const b=document.createElement("button"); b.className="rankBtn"; b.textContent=r; b.type="button";
-    b.addEventListener("click", ()=>{
-      if(!first){ first=r; b.classList.add("active"); }
-      else if(!second){ second=r; }
-      else{ first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
-      if(first && second && first===second){ type="pair"; setTypeButtons("pair"); } // авто-пейр при чифт
-      maybeCloseHB(); renderIfReady();
+  function buildRankGrid(){
+    rankGrid.innerHTML="";
+    // 13 ранга
+    ranks.forEach(r=>{ const b=document.createElement("button"); b.className="rankBtn"; b.textContent=r; b.type="button";
+      b.addEventListener("click", ()=>{
+        if(!first){ first=r; b.classList.add("active"); }
+        else if(!second){ second=r; }
+        else{ first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
+        if(first && second && first===second){ type="pair"; setTypeButtons("pair"); }
+        maybeCloseHB(); renderIfReady();
+      });
+      rankGrid.appendChild(b);
     });
-    rankGrid.appendChild(b);
-  });
+    // Добавяме S и O като „позиции №14 и №15“ – попълват празните 2 клетки на последния ред
+    ["s","o"].forEach(t=>{
+      const tb=document.createElement("button");
+      tb.className="typeBtn"; tb.textContent=t.toUpperCase(); tb.type="button"; tb.dataset.type=t;
+      tb.addEventListener("click", ()=>{ type=t; setTypeButtons(t); maybeCloseHB(); renderIfReady(); });
+      rankGrid.appendChild(tb);
+    });
+  }
+  buildRankGrid();
 
-  // S/O (в тесната колона вдясно)
-  function setTypeButtons(t){ document.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x.dataset.type===t)); }
-  document.querySelectorAll(".typeBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{ type=btn.dataset.type; setTypeButtons(type); maybeCloseHB(); renderIfReady(); });
-  });
+  function setTypeButtons(t){
+    rankGrid.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x.dataset.type===t));
+  }
 
   // Блайндове 1–15
   const bbGrid=document.getElementById("bbGrid");
@@ -217,16 +205,9 @@ default = 38"></textarea>
     bbGrid.appendChild(b);
   }
 
-  document.getElementById("clearHand").addEventListener("click", ()=>{
-    first=second=type=bbChoice=null;
-    rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active"));
-    setTypeButtons("");
-    bbGrid.querySelectorAll(".bbBtn").forEach(x=>x.classList.remove("active"));
-    hb.classList.add("show");
-    renderIfReady();
-  });
+  document.getElementById("clearHand").addEventListener("click", ()=> resetBuilder(false));
 
-  // Затваря само при РЪКА + БЛАЙНД
+  // Затваряме само при пълна селекция
   function maybeCloseHB(){
     if(first && second && bbChoice){
       if(first===second && type==="pair"){ hb.classList.remove("show"); return; }
@@ -234,7 +215,7 @@ default = 38"></textarea>
     }
   }
 
-  // Рендер
+  // Рендер логика
   function compute(pos,h,stk){
     const push=isPushPos(pos); const {def,map}=parseRaw(get(pos,stk),push); const hh=norm(h);
     if(push){const v=map[hh]!=null?map[hh]:def; return{disp:v==null?"—":String(Math.round(v*10)/10),num:v!=null,color:null,act:v};}
@@ -299,7 +280,19 @@ default = 38"></textarea>
     if(!editCtx) return; if(confirm("Да изчистя ли напълно тази клетка?")){ set(editCtx.key, editCtx.stk, ""); editModal.classList.remove("show"); renderIfReady(); }
   });
 
-  // Старт: показваме Hand Builder
+  // Reset builder (чист старт)
+  function resetBuilder(clearBBAlso){
+    first=second=type=null;
+    rankGrid.querySelectorAll(".rankBtn,.typeBtn").forEach(x=>x.classList.remove("active"));
+    if(clearBBAlso){
+      bbChoice=null; stackR=null; curStackEl.textContent="—";
+      bbGrid.querySelectorAll(".bbBtn").forEach(x=>x.classList.remove("active"));
+    }
+    curHandEl.textContent="—";
+  }
+
+  // Първо зареждане: чист панел и отворен
+  resetBuilder(true);
   hb.classList.add("show");
 })();
 </script>

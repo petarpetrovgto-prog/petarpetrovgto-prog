@@ -135,7 +135,7 @@ default = 38"></textarea>
   const isPushPos=p=>/PUSH/i.test(p);
   const alias=(key,act)=>{const up=(act||"").toUpperCase(); if(!(key==="BBvsSB_L"||key==="HUBB_L"||key==="HUBB_MR"||key==="BBvsBU_MR"||key==="SBvsBU_MR"||key==="BBvsSB_MR"))return{d:act,c:null};
     if(up==="MR-F-F")return{d:"Check/Call",c:COLORS["MR-F-F"]};
-    if(up==="L-C-AI")return{d:"ISO/Call",c:COLORS["L-C-AI"]};
+    if(up==="L-C-AI")return{d:"ISO/3bet",c:COLORS["L-C-AI"]};
     if(up==="SHOVE")return{d:"ISO/3bet AI",c:COLORS["SHOVE"]};
     if(up==="MR-4B-AI")return{d:"ISO/3bet/Fold",c:COLORS["MR-4B-AI"]};
     return{d:act,c:null};};

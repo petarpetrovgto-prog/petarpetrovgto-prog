@@ -133,7 +133,7 @@ default = 38"></textarea>
   const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
   const norm=s=>(s||"").toUpperCase().replace(/\s+/g,"");
   const isPushPos=p=>/PUSH/i.test(p);
-  const alias=(key,act)=>{const up=(act||"").toUpperCase(); if(!(key==="BBvsSB_L"||key==="HUBB_L"))return{d:act,c:null};
+  const alias=(key,act)=>{const up=(act||"").toUpperCase(); if(!(key==="BBvsSB_L"||key==="HUBB_L"||key==="HUBB_MR"||key==="BBvsBU_MR"||key==="SBvsBU_MR"||key==="BBvsSB_MR"))return{d:act,c:null};
     if(up==="MR-F-F")return{d:"Check/Call",c:COLORS["MR-F-F"]};
     if(up==="L-C-AI")return{d:"ISO/Call",c:COLORS["L-C-AI"]};
     if(up==="SHOVE")return{d:"ISO/3bet AI",c:COLORS["SHOVE"]};

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>QuickTable UltraLite v35</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#0f1520; --border:#223047; --text:#e7ecf3;
+    --push:#6d4b8e; --mr:#c24a4a; --limp:#7fcf7f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color: transparent;touch-action: manipulation}
+  html,body{height:100%} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.32 -apple-system,system-ui,Segoe UI,Roboto,Arial}
+
+  /* Top bar */
+  .bar{position:sticky;top:0;z-index:30;background:#101827;border-bottom:1px solid var(--border);padding:6px 8px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .chip{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
+  .btn{border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;user-select:none;cursor:pointer}
+  .btn.active{outline:2px solid #4da3ff;outline-offset:1px}
+
+  /* Stack quick row (always visible) */
+  .stackRow{position:sticky;top:42px;z-index:25;background:#0f1520;border-bottom:1px solid var(--border);padding:6px 8px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .stackBtn{border:1px solid var(--border);background:#111a2b;border-radius:10px;padding:10px 0;font-weight:800;font-size:14px}
+  .stackBtn.active{outline:2px solid #4da3ff}
+
+  /* FULLSCREEN Hand Builder */
+  .overlay{position:fixed;inset:0;background:#0b0f14;display:none;z-index:50}
+  .overlay.show{display:block}
+  .hbHead{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border);background:#101827}
+  .hbTitle{font-weight:900;letter-spacing:.2px}
+  .hbInner{padding:12px}
+  /* огромни бутони */
+  .rankGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+  .rankBtn{border:1px solid var(--border);background:#142035;border-radius:14px;padding:18px 0;font-weight:900;font-size:28px}
+  .typeRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .typeBtn{border:1px solid var(--border);background:#111a2b;border-radius:12px;padding:12px 0;font-weight:800;font-size:16px}
+  .typeBtn.active{outline:2px solid #4da3ff;outline-offset:2px}
+  .clearBtn{border:1px solid var(--border);background:#0f1624;border-radius:12px;padding:12px 0;font-weight:800;font-size:16px;width:100%}
+
+  /* Results */
+  .wrap{max-width:1100px;margin:0 auto;padding:8px}
+  .grid{display:grid;gap:8px}
+  @media (min-width:980px){ .grid{grid-template-columns:repeat(4,1fr)} }
+  @media (max-width:979px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  .col h2{margin:6px 0 6px;font-size:14px;text-align:center;opacity:.9}
+  .list{display:flex;flex-direction:column;gap:6px}
+  .card{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px;min-height:38px}
+  .label{font-weight:800;font-size:13px}
+  .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="chips">
+      <span class="chip">Ръка: <b id="curHand">—</b></span>
+      <span class="chip">Стак: <b id="curStack">—</b></span>
+    </div>
+    <button id="openHB" class="btn">Ръка</button>
+  </div>
+
+  <!-- Stack quick picker -->
+  <div class="stackRow" id="stackRow">
+    <button class="stackBtn" data-s="0–4">0–4</button>
+    <button class="stackBtn" data-s="4–7">4–7</button>
+    <button class="stackBtn" data-s="7–10">7–10</button>
+    <button class="stackBtn" data-s="10–13">10–13</button>
+    <button class="stackBtn" data-s="13+">13+</button>
+  </div>
+
+  <!-- FULLSCREEN Hand Builder -->
+  <div id="hb" class="overlay">
+    <div class="hbHead">
+      <div class="hbTitle">Избери ръка (два ранга + тип)</div>
+      <button id="closeHB" class="btn">Затвори</button>
+    </div>
+    <div class="hbInner">
+      <div class="rankGrid" id="rankGrid"></div>
+      <div class="typeRow" id="typeRow">
+        <button class="typeBtn" data-type="pair">Pair</button>
+        <button class="typeBtn" data-type="s">Suited (s)</button>
+        <button class="typeBtn" data-type="o">Offsuit (o)</button>
+      </div>
+      <button id="clearHand" class="clearBtn">Изчисти ръката</button>
+    </div>
+  </div>
+
+  <div class="wrap" id="results">
+    <div class="grid">
+      <div class="col"><h2>HUSB & BU</h2><div class="list" id="R_HUSB"></div></div>
+      <div class="col"><h2>HUBB</h2><div class="list" id="R_HUBB"></div></div>
+      <div class="col"><h2>SB</h2><div class="list" id="R_SB"></div></div>
+      <div class="col"><h2>BB</h2><div class="list" id="R_BB"></div></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // Colors and helpers
+  const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
+  const norm=s=>(s||"").toUpperCase().replace(/\\s+/g,""); const isPushPos=p=>/PUSH/i.test(p);
+  const rgb=h=>{h=h.replace("#","");let n=parseInt(h,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255}};
+  const fgFor=h=>{let{r,g,b}=rgb(h);return((r*299+g*587+b*114)/1000)>160?"#000":"#fff"};
+  const alias=(key,act)=>{const up=(act||"").toUpperCase(); if(!(key==="BBvsSB_L"||key==="HUBB_L"))return{d:act,c:null};
+    if(up==="MR-F-F")return{d:"Check/Call",c:COLORS["MR-F-F"]};
+    if(up==="L-C-AI")return{d:"ISO/Call",c:COLORS["L-C-AI"]};
+    if(up==="SHOVE")return{d:"ISO/3bet AI",c:COLORS["SHOVE"]};
+    if(up==="MR-4B-AI")return{d:"ISO/3bet/Fold",c:COLORS["MR-4B-AI"]};
+    return{d:act,c:null};};
+
+  // Storage
+  let DB=JSON.parse(localStorage.getItem("qt_v35")||"{}");
+  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v35",JSON.stringify(DB))};
+  function parseRaw(raw,push=false){ if(!raw)return{def:null,map:{}}; let def=null,map={};
+    raw.split(/\\r?\\n|;/).map(s=>s.trim()).filter(Boolean).forEach(line=>{
+      const m=line.split("="); if(m.length===1){const v=m[0].trim(); if(!v)return; def=push?parseFloat(v):v.toUpperCase();}
+      else{const h=norm(m[0]); const v=m.slice(1).join("=").trim();
+        if(/^DEFAULT$/i.test(h)) def=push?parseFloat(v):v.toUpperCase();
+        else if(h) map[h]=push?parseFloat(v):v.toUpperCase(); }
+    }); return{def,map}; }
+
+  // Groups
+  const GROUPS={
+    HUSB:[{label:"HUSB",key:"HUSB",neutral:true},{label:"BU",key:"BU",neutral:true}],
+    HUBB:[{label:"HUBB (Limp)",key:"HUBB_L"},{label:"HUBB (MR)",key:"HUBB_MR"},{label:"HUBB (Push)",key:"HUBBv_PUSH"}],
+    SB:[{label:"SBvsBU (MR)",key:"SBvsBU"},{label:"SBvsBU (Push)",key:"SBvsBU_PUSH"},{label:"SBvsBB",key:"SBvsBB",neutral:true}],
+    BB:[{label:"BBvsBU (MR)",key:"BBvsBU_MR"},{label:"BBvsBU (Push)",key:"BBvsBU_PUSH"},{label:"BBvsSB (Limp)",key:"BBvsSB_L"},{label:"BBvsSB (MR)",key:"BBvsSB_MR"},{label:"BBvsSB (Push)",key:"BBvsSB_PUSH"}]
+  };
+
+  // State
+  const ranks="A K Q J T 9 8 7 6 5 4 3 2".split(" ");
+  let first=null,second=null,type="s",stackR=null;
+  const curHandEl=document.getElementById("curHand"); const curStackEl=document.getElementById("curStack");
+
+  // Hand text
+  const handText=()=>{ if(!first||!second) return null; if(first===second) return first+second; return first+second+(type==="pair"?"":type); };
+
+  // Render core
+  function compute(pos,h,stk){
+    const push=isPushPos(pos); const {def,map}=parseRaw(get(pos,stk),push); const hh=norm(h);
+    if(push){const v=map[hh]!=null?map[hh]:def; return {disp:v==null?"—":String(Math.round(v*10)/10), val:v, num: v!=null};}
+    else{const act=(map[hh]||def||"—"); const a=alias(pos,act); return {disp:a.d, val:act, color:a.c, num:false};}
+  }
+  const bg=(lab,key,val,neutral)=>{
+    if(neutral) return "#0f1624";
+    if(/Push/i.test(lab)||/PUSH/i.test(key)||/^\\d+(\\.\\d+)?$/.test(val)) return getComputedStyle(document.documentElement).getPropertyValue('--push');
+    if(/\\(MR\\)/i.test(lab)||/_MR$/i.test(key)) return getComputedStyle(document.documentElement).getPropertyValue('--mr');
+    if(/\\(Limp\\)/i.test(lab)||/_L$/i.test(key)||key==="BU"||key==="HUSB") return getComputedStyle(document.documentElement).getPropertyValue('--limp');
+    return "#0f1624";
+  };
+  const fgForCol = (col)=>{ return fgFor(col); };
+
+  function attachEditor(div,label,key,stk){
+    let pressTimer=null;
+    const start=()=>{ pressTimer=setTimeout(()=>{
+      const cur=get(key,stk)||"";
+      const nv=prompt(`Редакция: ${label} × ${stk}\nФормат:\nHAND = ACTION\nили default = ACTION\n(PUSH → само числа)`, cur.raw||"");
+      if(nv!=null){ set(key,stk,nv); const h=handText(); if(h&&stackR) render(h,stackR); }
+    },450); };
+    const cancel=()=>{ if(pressTimer){clearTimeout(pressTimer); pressTimer=null;} };
+    div.addEventListener("touchstart", start, {passive:true});
+    div.addEventListener("touchend", cancel, {passive:true});
+    div.addEventListener("touchmove", cancel, {passive:true});
+    div.addEventListener("mousedown", start);
+    div.addEventListener("mouseup", cancel);
+    div.addEventListener("mouseleave", cancel);
+    div.addEventListener("dblclick", ()=>{ // fallback
+      const cur=get(key,stk)||"";
+      const nv=prompt(`Редакция: ${label} × ${stk}\нФормат:\нHAND = ACTION\nили default = ACTION\n(PUSH → само числа)`, cur.raw||"");
+      if(nv!=null){ set(key,stk,nv); const h=handText(); if(h&&stackR) render(h,stackR); }
+    });
+  }
+
+  function row(container,label,key,h,stk,neutral=false){
+    const c=compute(key,h,stk);
+    const div=document.createElement("div"); div.className="card"; div.title="Задръж за редакция";
+    const lab=document.createElement("div"); lab.className="label"; lab.textContent=label;
+    const val=document.createElement("div"); val.className="val"; val.textContent=c.disp;
+    div.style.background=bg(label,key,c.disp,neutral);
+    if(c.color){ val.style.background=c.color; val.style.color=fgForCol(c.color); }
+    else if(c.num){ val.style.background="rgba(0,0,0,.22)"; val.style.color="#fff"; }
+    else { const col = COLORS[(c.disp+"").toUpperCase()] || COLORS[(c.val+"").toUpperCase()] || "#2a2f3c"; val.style.background=col; val.style.color=fgForCol(col); }
+    attachEditor(div,label,key,stk);
+    div.appendChild(lab); div.appendChild(val); container.appendChild(div);
+  }
+
+  function render(h,stk){
+    ["R_HUSB","R_HUBB","R_SB","R_BB"].forEach(id=> document.getElementById(id).innerHTML="");
+    const G=GROUPS;
+    for(const it of G.HUSB) row(document.getElementById("R_HUSB"), it.label,it.key,h,stk,!!it.neutral);
+    for(const it of G.HUBB) row(document.getElementById("R_HUBB"), it.label,it.key,h,stk,!!it.neutral);
+    for(const it of G.SB)   row(document.getElementById("R_SB"),   it.label,it.key,h,stk,!!it.neutral);
+    for(const it of G.BB)   row(document.getElementById("R_BB"),   it.label,it.key,h,stk,!!it.neutral);
+  }
+
+  // Hand Builder UI
+  const hb=document.getElementById("hb");
+  const openHB=()=> hb.classList.add("show");
+  const closeHB=()=> hb.classList.remove("show");
+  document.getElementById("openHB").addEventListener("click", openHB);
+  document.getElementById("closeHB").addEventListener("click", closeHB);
+
+  // Huge rank buttons (5 per row, max size)
+  const rankGrid=document.getElementById("rankGrid");
+  ranks.forEach(r=>{ const b=document.createElement("button"); b.className="rankBtn"; b.textContent=r;
+    const tap=(e)=>{ e.preventDefault();
+      if(!first){ first=r; b.classList.add("active"); }
+      else if(!second){ second=r; /* auto-close if type is set */ if(type || first===second) autoCloseIfReady(); }
+      else { first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
+      updateHeader();
+    };
+    b.addEventListener("touchstart", tap, {passive:false});
+    b.addEventListener("mousedown", tap);
+    b.addEventListener("click", e=>e.preventDefault());
+    rankGrid.appendChild(b);
+  });
+
+  // Type buttons (big)
+  const typeRow=document.getElementById("typeRow");
+  let type="s";
+  typeRow.querySelectorAll(".typeBtn").forEach(btn=>{
+    const t=btn.dataset.type;
+    if(t==="s") btn.classList.add("active");
+    const tap=(e)=>{ e.preventDefault(); type=t; typeRow.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x===btn)); autoCloseIfReady(); updateHeader(); };
+    btn.addEventListener("touchstart", tap, {passive:false});
+    btn.addEventListener("mousedown", tap);
+  });
+
+  function autoCloseIfReady(){
+    // ръката е готова ако имаме два ранга; при чифт типът няма значение
+    if(first && second){
+      const h = handText();
+      curHandEl.textContent = h || "—";
+      if(h && stackR){ render(h,stackR); }
+      closeHB(); // затвори веднага след избора на ръка
+    }
+  }
+
+  document.getElementById("clearHand").addEventListener("click", ()=>{
+    first=null; second=null;
+    rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active"));
+    updateHeader();
+  });
+
+  function updateHeader(){
+    const h = handText();
+    curHandEl.textContent = h || "—";
+  }
+
+  // Stack quick buttons (always visible)
+  const stackRow=document.getElementById("stackRow");
+  stackRow.querySelectorAll(".stackBtn").forEach(btn=>{
+    const tap=(e)=>{ e.preventDefault();
+      stackR=btn.dataset.s;
+      stackRow.querySelectorAll(".stackBtn").forEach(x=>x.classList.toggle("active", x===btn));
+      curStackEl.textContent = stackR || "—";
+      const h = handText();
+      if(h && stackR) render(h, stackR);
+    };
+    btn.addEventListener("touchstart", tap, {passive:false});
+    btn.addEventListener("mousedown", tap);
+  });
+
+  // Open builder initially (so you pick hand first)
+  openHB();
+})();
+</script>
+</body>
+</html>

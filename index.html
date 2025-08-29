@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>QuickTable UltraLite v35</title>
+<title>QuickTable UltraLite v36</title>
 <style>
   :root{
     --bg:#0b0f14; --panel:#0f1520; --border:#223047; --text:#e7ecf3;
@@ -17,9 +17,8 @@
   .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   .chip{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
   .btn{border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;user-select:none;cursor:pointer}
-  .btn.active{outline:2px solid #4da3ff;outline-offset:1px}
 
-  /* Stack quick row (always visible) */
+  /* Stack quick row */
   .stackRow{position:sticky;top:42px;z-index:25;background:#0f1520;border-bottom:1px solid var(--border);padding:6px 8px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
   .stackBtn{border:1px solid var(--border);background:#111a2b;border-radius:10px;padding:10px 0;font-weight:800;font-size:14px}
   .stackBtn.active{outline:2px solid #4da3ff}
@@ -30,7 +29,6 @@
   .hbHead{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border);background:#101827}
   .hbTitle{font-weight:900;letter-spacing:.2px}
   .hbInner{padding:12px}
-  /* огромни бутони */
   .rankGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
   .rankBtn{border:1px solid var(--border);background:#142035;border-radius:14px;padding:18px 0;font-weight:900;font-size:28px}
   .typeRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
@@ -46,8 +44,9 @@
   .col h2{margin:6px 0 6px;font-size:14px;text-align:center;opacity:.9}
   .list{display:flex;flex-direction:column;gap:6px}
   .card{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px;min-height:38px}
-  .label{font-weight:800;font-size:13px}
+  .label{font-weight:800;font-size:13px;display:flex;align-items:center;gap:8px}
   .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center;font-size:14px}
+  .edit{font-size:13px;padding:4px 8px;border:1px dashed #395079;border-radius:8px;background:#0d1422;cursor:pointer}
 </style>
 </head>
 <body>
@@ -96,7 +95,7 @@
 
 <script>
 (() => {
-  // Colors and helpers
+  // Colors & helpers
   const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
   const norm=s=>(s||"").toUpperCase().replace(/\\s+/g,""); const isPushPos=p=>/PUSH/i.test(p);
   const rgb=h=>{h=h.replace("#","");let n=parseInt(h,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255}};
@@ -109,8 +108,8 @@
     return{d:act,c:null};};
 
   // Storage
-  let DB=JSON.parse(localStorage.getItem("qt_v35")||"{}");
-  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v35",JSON.stringify(DB))};
+  let DB=JSON.parse(localStorage.getItem("qt_v36")||"{}");
+  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v36",JSON.stringify(DB))};
   function parseRaw(raw,push=false){ if(!raw)return{def:null,map:{}}; let def=null,map={};
     raw.split(/\\r?\\n|;/).map(s=>s.trim()).filter(Boolean).forEach(line=>{
       const m=line.split("="); if(m.length===1){const v=m[0].trim(); if(!v)return; def=push?parseFloat(v):v.toUpperCase();}
@@ -148,39 +147,28 @@
     if(/\\(Limp\\)/i.test(lab)||/_L$/i.test(key)||key==="BU"||key==="HUSB") return getComputedStyle(document.documentElement).getPropertyValue('--limp');
     return "#0f1624";
   };
-  const fgForCol = (col)=>{ return fgFor(col); };
 
-  function attachEditor(div,label,key,stk){
-    let pressTimer=null;
-    const start=()=>{ pressTimer=setTimeout(()=>{
+  function attachEditor(editBtn,label,key,stk){
+    editBtn.addEventListener("click", () => {
       const cur=get(key,stk)||"";
       const nv=prompt(`Редакция: ${label} × ${stk}\nФормат:\nHAND = ACTION\nили default = ACTION\n(PUSH → само числа)`, cur.raw||"");
-      if(nv!=null){ set(key,stk,nv); const h=handText(); if(h&&stackR) render(h,stackR); }
-    },450); };
-    const cancel=()=>{ if(pressTimer){clearTimeout(pressTimer); pressTimer=null;} };
-    div.addEventListener("touchstart", start, {passive:true});
-    div.addEventListener("touchend", cancel, {passive:true});
-    div.addEventListener("touchmove", cancel, {passive:true});
-    div.addEventListener("mousedown", start);
-    div.addEventListener("mouseup", cancel);
-    div.addEventListener("mouseleave", cancel);
-    div.addEventListener("dblclick", ()=>{ // fallback
-      const cur=get(key,stk)||"";
-      const nv=prompt(`Редакция: ${label} × ${stk}\нФормат:\нHAND = ACTION\nили default = ACTION\n(PUSH → само числа)`, cur.raw||"");
       if(nv!=null){ set(key,stk,nv); const h=handText(); if(h&&stackR) render(h,stackR); }
     });
   }
 
   function row(container,label,key,h,stk,neutral=false){
     const c=compute(key,h,stk);
-    const div=document.createElement("div"); div.className="card"; div.title="Задръж за редакция";
-    const lab=document.createElement("div"); lab.className="label"; lab.textContent=label;
+    const div=document.createElement("div"); div.className="card";
+    const lab=document.createElement("div"); lab.className="label";
+    const txt=document.createElement("span"); txt.textContent=label;
+    const edit=document.createElement("button"); edit.className="edit"; edit.type="button"; edit.textContent="✎ Edit";
+    attachEditor(edit,label,key,stk);
+    lab.appendChild(txt); lab.appendChild(edit);
     const val=document.createElement("div"); val.className="val"; val.textContent=c.disp;
     div.style.background=bg(label,key,c.disp,neutral);
-    if(c.color){ val.style.background=c.color; val.style.color=fgForCol(c.color); }
+    if(c.color){ val.style.background=c.color; val.style.color=fgFor(c.color); }
     else if(c.num){ val.style.background="rgba(0,0,0,.22)"; val.style.color="#fff"; }
-    else { const col = COLORS[(c.disp+"").toUpperCase()] || COLORS[(c.val+"").toUpperCase()] || "#2a2f3c"; val.style.background=col; val.style.color=fgForCol(col); }
-    attachEditor(div,label,key,stk);
+    else { const col = COLORS[(c.disp+"").toUpperCase()] || COLORS[(c.val+"").toUpperCase()] || "#2a2f3c"; val.style.background=col; val.style.color=fgFor(col); }
     div.appendChild(lab); div.appendChild(val); container.appendChild(div);
   }
 
@@ -200,41 +188,22 @@
   document.getElementById("openHB").addEventListener("click", openHB);
   document.getElementById("closeHB").addEventListener("click", closeHB);
 
-  // Huge rank buttons (5 per row, max size)
   const rankGrid=document.getElementById("rankGrid");
   ranks.forEach(r=>{ const b=document.createElement("button"); b.className="rankBtn"; b.textContent=r;
-    const tap=(e)=>{ e.preventDefault();
+    b.addEventListener("click", (e)=> {
       if(!first){ first=r; b.classList.add("active"); }
-      else if(!second){ second=r; /* auto-close if type is set */ if(type || first===second) autoCloseIfReady(); }
+      else if(!second){ second=r; autoCloseIfReady(); }
       else { first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
       updateHeader();
-    };
-    b.addEventListener("touchstart", tap, {passive:false});
-    b.addEventListener("mousedown", tap);
-    b.addEventListener("click", e=>e.preventDefault());
+    });
     rankGrid.appendChild(b);
   });
 
-  // Type buttons (big)
   const typeRow=document.getElementById("typeRow");
-  let type="s";
   typeRow.querySelectorAll(".typeBtn").forEach(btn=>{
-    const t=btn.dataset.type;
-    if(t==="s") btn.classList.add("active");
-    const tap=(e)=>{ e.preventDefault(); type=t; typeRow.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x===btn)); autoCloseIfReady(); updateHeader(); };
-    btn.addEventListener("touchstart", tap, {passive:false});
-    btn.addEventListener("mousedown", tap);
+    const t=btn.dataset.type; if(t==="s") btn.classList.add("active");
+    btn.addEventListener("click", ()=>{ type=t; typeRow.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x===btn)); autoCloseIfReady(); updateHeader(); });
   });
-
-  function autoCloseIfReady(){
-    // ръката е готова ако имаме два ранга; при чифт типът няма значение
-    if(first && second){
-      const h = handText();
-      curHandEl.textContent = h || "—";
-      if(h && stackR){ render(h,stackR); }
-      closeHB(); // затвори веднага след избора на ръка
-    }
-  }
 
   document.getElementById("clearHand").addEventListener("click", ()=>{
     first=null; second=null;
@@ -242,26 +211,29 @@
     updateHeader();
   });
 
-  function updateHeader(){
-    const h = handText();
-    curHandEl.textContent = h || "—";
+  function autoCloseIfReady(){
+    if(first && second){
+      const h=handText(); curHandEl.textContent=h||"—";
+      if(h && stackR) render(h,stackR);
+      closeHB();
+    }
   }
 
-  // Stack quick buttons (always visible)
+  function updateHeader(){ const h=handText(); curHandEl.textContent=h||"—"; }
+
+  // Stack quick buttons
   const stackRow=document.getElementById("stackRow");
   stackRow.querySelectorAll(".stackBtn").forEach(btn=>{
-    const tap=(e)=>{ e.preventDefault();
+    btn.addEventListener("click", ()=> {
       stackR=btn.dataset.s;
       stackRow.querySelectorAll(".stackBtn").forEach(x=>x.classList.toggle("active", x===btn));
       curStackEl.textContent = stackR || "—";
       const h = handText();
       if(h && stackR) render(h, stackR);
-    };
-    btn.addEventListener("touchstart", tap, {passive:false});
-    btn.addEventListener("mousedown", tap);
+    });
   });
 
-  // Open builder initially (so you pick hand first)
+  // Open builder initially
   openHB();
 })();
 </script>

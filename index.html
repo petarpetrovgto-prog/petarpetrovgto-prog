@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>QuickTable UltraLite v37</title>
+<title>QuickTable UltraLite v39</title>
 <style>
   :root{
-    --bg:#0b0f14; --panel:#0f1520; --border:#223047; --text:#e7ecf3;
+    --bg:#0b0f14; --panel:#0f1520; --panel2:#101827; --border:#223047; --text:#e7ecf3;
     --push:#6d4b8e; --mr:#c24a4a; --limp:#7fcf7f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color: transparent;touch-action: manipulation}
@@ -18,22 +18,33 @@
   .chip{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
   .btn{border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px 10px;font-weight:700;font-size:13px;user-select:none;cursor:pointer}
 
-  /* Stack quick row */
+  /* (Авто-скрива се) Stack quick row */
   .stackRow{position:sticky;top:42px;z-index:25;background:#0f1520;border-bottom:1px solid var(--border);padding:6px 8px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .stackRow.hide{display:none}
   .stackBtn{border:1px solid var(--border);background:#111a2b;border-radius:10px;padding:10px 0;font-weight:800;font-size:14px}
   .stackBtn.active{outline:2px solid #4da3ff}
 
-  /* FULLSCREEN Hand Builder */
+  /* FULLSCREEN Hand Builder (център-ниско за работа с 1 ръка) */
   .overlay{position:fixed;inset:0;background:#0b0f14;display:none;z-index:50}
-  .overlay.show{display:block}
-  .hbHead{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border);background:#101827}
+  .overlay.show{display:flex;flex-direction:column;justify-content:center;padding:0 0 110px 0;}
+  .hbBox{margin:0 auto;width:100%;max-width:560px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--panel2)}
+  .hbHead{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)}
   .hbTitle{font-weight:900;letter-spacing:.2px}
-  .hbInner{padding:12px}
+  .hbInner{padding:12px;background:var(--panel)}
   .rankGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
   .rankBtn{border:1px solid var(--border);background:#142035;border-radius:14px;padding:18px 0;font-weight:900;font-size:28px}
+  .rankBtn.active{outline:2px solid #4da3ff;outline-offset:2px}
   .typeRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
   .typeBtn{border:1px solid var(--border);background:#111a2b;border-radius:12px;padding:12px 0;font-weight:800;font-size:16px}
   .typeBtn.active{outline:2px solid #4da3ff;outline-offset:2px}
+
+  /* Blinds 1–15 вътре в Hand Builder */
+  .bbHead{margin:6px 0 6px;font-size:13px;opacity:.8}
+  .bbGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .bbBtn{border:1px solid var(--border);background:#1a2740;border-radius:12px;padding:12px 0;font-weight:900;font-size:18px}
+  .bbBtn.active{outline:2px solid #4da3ff;outline-offset:2px}
+
+  .clearRow{margin-top:10px}
   .clearBtn{border:1px solid var(--border);background:#0f1624;border-radius:12px;padding:12px 0;font-weight:800;font-size:16px;width:100%}
 
   /* Results */
@@ -43,10 +54,20 @@
   @media (max-width:979px){ .grid{grid-template-columns:repeat(2,1fr)} }
   .col h2{margin:6px 0 6px;font-size:14px;text-align:center;opacity:.9}
   .list{display:flex;flex-direction:column;gap:6px}
-  .card{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:8px;min-height:38px}
-  .label{font-weight:800;font-size:13px;display:flex;align-items:center;gap:8px}
+  .card{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);background:#0f1624;border-radius:10px;padding:10px;min-height:40px;cursor:pointer}
+  .label{font-weight:800;font-size:13px}
   .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center;font-size:14px}
-  .edit{font-size:13px;padding:4px 8px;border:1px dashed #395079;border-radius:8px;background:#0d1422;cursor:pointer}
+
+  /* Editor overlay (textarea) */
+  .editOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:60;align-items:center;justify-content:center;padding:16px}
+  .editOverlay.show{display:flex}
+  .editBox{width:100%;max-width:620px;background:#0f1520;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .editHead{display:flex;align-items:center;justify-content:space-between;padding:10px;background:#101827;border-bottom:1px solid var(--border)}
+  .editTitle{font-weight:900}
+  .editBody{padding:10px}
+  .editBody textarea{width:100%;min-height:220px;background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font:14px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  .editFoot{display:flex;gap:8px;justify-content:flex-end;padding:10px;border-top:1px solid var(--border);background:#0f1520}
+  .btnWarn{background:#3a1212;border-color:#6b1f1f}
 </style>
 </head>
 <body>
@@ -58,7 +79,7 @@
     <button id="openHB" class="btn" type="button">Ръка</button>
   </div>
 
-  <!-- Stack quick picker -->
+  <!-- Stack quick picker (скрива се след избор) -->
   <div class="stackRow" id="stackRow">
     <button class="stackBtn" data-s="0–4"  type="button">0–4</button>
     <button class="stackBtn" data-s="4–7"  type="button">4–7</button>
@@ -69,21 +90,28 @@
 
   <!-- FULLSCREEN Hand Builder -->
   <div id="hb" class="overlay">
-    <div class="hbHead">
-      <div class="hbTitle">Избери ръка (два ранга + тип)</div>
-      <button id="closeHB" class="btn" type="button">Затвори</button>
-    </div>
-    <div class="hbInner">
-      <div class="rankGrid" id="rankGrid"></div>
-      <div class="typeRow" id="typeRow">
-        <button class="typeBtn" data-type="pair" type="button">Pair</button>
-        <button class="typeBtn" data-type="s"    type="button">Suited (s)</button>
-        <button class="typeBtn" data-type="o"    type="button">Offsuit (o)</button>
+    <div class="hbBox">
+      <div class="hbHead">
+        <div class="hbTitle">Избери ръка и блайнд</div>
+        <button id="closeHB" class="btn" type="button">Затвори</button>
       </div>
-      <button id="clearHand" class="clearBtn" type="button">Изчисти ръката</button>
+      <div class="hbInner">
+        <div class="rankGrid" id="rankGrid"></div>
+        <div class="typeRow" id="typeRow">
+          <button class="typeBtn" data-type="pair" type="button">Pair</button>
+          <button class="typeBtn" data-type="s"    type="button">Suited (s)</button>
+          <button class="typeBtn" data-type="o"    type="button">Offsuit (o)</button>
+        </div>
+
+        <div class="bbHead">Блайндове (1–15):</div>
+        <div class="bbGrid" id="bbGrid"></div>
+
+        <div class="clearRow"><button id="clearHand" class="clearBtn" type="button">Изчисти ръката</button></div>
+      </div>
     </div>
   </div>
 
+  <!-- Резултати -->
   <div class="wrap" id="results">
     <div class="grid">
       <div class="col"><h2>HUSB & BU</h2><div class="list" id="R_HUSB"></div></div>
@@ -93,13 +121,35 @@
     </div>
   </div>
 
+  <!-- Editor overlay -->
+  <div id="editModal" class="editOverlay">
+    <div class="editBox">
+      <div class="editHead">
+        <div class="editTitle" id="editTitle">Редакция</div>
+        <button id="editClose" class="btn" type="button">Затвори</button>
+      </div>
+      <div class="editBody">
+        <textarea id="editArea" spellcheck="false" placeholder="Пример:
+AJo = L-C-AI
+default = Fold
+
+(За PUSH позиции — само числа)
+AJo = 45
+default = 38"></textarea>
+      </div>
+      <div class="editFoot">
+        <button id="editClear" class="btn btnWarn" type="button">Изчисти</button>
+        <button id="editSave" class="btn" type="button">Запази</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function(){
-  // Colors & helpers
+  // Цветове и helper-и
   const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
-  const norm=s=>(s||"").toUpperCase().replace(/\s+/g,""); const isPushPos=p=>/PUSH/i.test(p);
-
-  // Limp aliases
+  const norm=s=>(s||"").toUpperCase().replace(/\s+/g,"");
+  const isPushPos=p=>/PUSH/i.test(p);
   const alias=(key,act)=>{const up=(act||"").toUpperCase(); if(!(key==="BBvsSB_L"||key==="HUBB_L"))return{d:act,c:null};
     if(up==="MR-F-F")return{d:"Check/Call",c:COLORS["MR-F-F"]};
     if(up==="L-C-AI")return{d:"ISO/Call",c:COLORS["L-C-AI"]};
@@ -107,9 +157,10 @@
     if(up==="MR-4B-AI")return{d:"ISO/3bet/Fold",c:COLORS["MR-4B-AI"]};
     return{d:act,c:null};};
 
-  // Storage
-  let DB=JSON.parse(localStorage.getItem("qt_v37")||"{}");
-  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v37",JSON.stringify(DB))};
+  // DB
+  let DB=JSON.parse(localStorage.getItem("qt_v39")||"{}");
+  const k=(p,r)=>p+"||"+r; const get=(p,r)=>DB[k(p,r)]?.raw||""; const set=(p,r,raw)=>{DB[k(p,r)]={raw};localStorage.setItem("qt_v39",JSON.stringify(DB))};
+
   function parseRaw(raw,push=false){ if(!raw)return{def:null,map:{}}; let def=null,map={};
     raw.split(/\r?\n|;/).map(s=>s.trim()).filter(Boolean).forEach(line=>{
       const m=line.split("="); if(m.length===1){const v=m[0].trim(); if(!v)return; def=push?parseFloat(v):v.toUpperCase();}
@@ -118,7 +169,7 @@
         else if(h) map[h]=push?parseFloat(v):v.toUpperCase(); }
     }); return{def,map}; }
 
-  // Groups
+  // Групи
   const GROUPS={
     HUSB:[{label:"HUSB",key:"HUSB",neutral:true},{label:"BU",key:"BU",neutral:true}],
     HUBB:[{label:"HUBB (Limp)",key:"HUBB_L"},{label:"HUBB (MR)",key:"HUBB_MR"},{label:"HUBB (Push)",key:"HUBBv_PUSH"}],
@@ -126,108 +177,178 @@
     BB:[{label:"BBvsBU (MR)",key:"BBvsBU_MR"},{label:"BBvsBU (Push)",key:"BBvsBU_PUSH"},{label:"BBvsSB (Limp)",key:"BBvsSB_L"},{label:"BBvsSB (MR)",key:"BBvsSB_MR"},{label:"BBvsSB (Push)",key:"BBvsSB_PUSH"}]
   };
 
-  // State
+  // Състояние
   const ranks=["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
-  let first=null,second=null,type="s",stackR=null;
+  let first=null,second=null,type=null,stackR=null,bbChoice=null; // type е задължителен при не-чифт
   const curHandEl=document.getElementById("curHand"); const curStackEl=document.getElementById("curStack");
 
-  const handText=()=>{ if(!first||!second) return null; if(first===second) return first+second; return first+second+(type==="pair"?"":type); };
+  // Helper: текст на ръката
+  const handText=()=>{ if(!first||!second) return null; if(first===second) return first+second; return first+second+(type==="pair"?"":type||""); };
 
+  // Map от числов BB към диапазон
+  function mapBBtoRange(n){
+    n = Number(n)||0;
+    if(n>=1 && n<=4) return "0–4";
+    if(n>=5 && n<=7) return "4–7";
+    if(n>=8 && n<=10) return "7–10";
+    if(n>=11 && n<=13) return "10–13";
+    return "13+";
+  }
+
+  // Рендер ядро
   function compute(pos,h,stk){
     const push=isPushPos(pos); const {def,map}=parseRaw(get(pos,stk),push); const hh=norm(h);
-    if(push){const v=map[hh]!=null?map[hh]:def; return {disp:v==null?"—":String(Math.round(v*10)/10), val:v, num: v!=null};}
-    else{const act=(map[hh]||def||"—"); const a=alias(pos,act); return {disp:a.d, val:act, color:a.c, num:false};}
+    if(push){const v=map[hh]!=null?map[hh]:def; return{disp:v==null?"—":String(Math.round(v*10)/10),num:v!=null,color:null,act:v};}
+    else{const act=(map[hh]||def||"—"); const a=alias(pos,act); return{disp:a.d,num:false,color:a.c,act:act};}
   }
   const bg=(lab,key,val,neutral)=>{
     if(neutral) return "#0f1624";
-    if(/Push/i.test(lab)||/PUSH/i.test(key)||/^\d+(\.\d+)?$/.test(val)) return getComputedStyle(document.documentElement).getPropertyValue('--push');
+    if(/Push/i.test(lab)||/PUSH$/.test(key)||/^\d+(\.\d+)?$/.test(val)) return getComputedStyle(document.documentElement).getPropertyValue('--push');
     if(/\(MR\)/i.test(lab)||/_MR$/.test(key)) return getComputedStyle(document.documentElement).getPropertyValue('--mr');
     if(/\(Limp\)/i.test(lab)||/_L$/.test(key)||key==="BU"||key==="HUSB") return getComputedStyle(document.documentElement).getPropertyValue('--limp');
     return "#0f1624";
   };
 
-  function attachEditor(editBtn,label,key,stk){
-    editBtn.addEventListener("click", () => {
-      const cur=get(key,stk)||"";
-      const nv=prompt(`Редакция: ${label} × ${stk}\nФормат:\nHAND = ACTION\nили default = ACTION\n(PUSH → само числа)`, cur.raw||"");
-      if(nv!=null){ set(key,stk,nv); const h=handText(); if(h&&stackR) render(h,stackR); }
-    });
-  }
-
-  function row(container,label,key,h,stk,neutral=false){
-    const c=compute(key,h,stk);
-    const div=document.createElement("div"); div.className="card";
-    const lab=document.createElement("div"); lab.className="label";
-    const txt=document.createElement("span"); txt.textContent=label;
-    const edit=document.createElement("button"); edit.className="edit"; edit.type="button"; edit.textContent="✎ Edit";
-    attachEditor(edit,label,key,stk);
-    lab.appendChild(txt); lab.appendChild(edit);
-    const val=document.createElement("div"); val.className="val"; val.textContent=c.disp;
-    div.style.background=bg(label,key,c.disp,neutral);
-    if(c.color){ val.style.background=c.color; val.style.color="#000"; }
-    else if(c.num){ val.style.background="rgba(0,0,0,.22)"; val.style.color="#fff"; }
-    else { const col = COLORS[(c.disp+"").toUpperCase()] || COLORS[(c.val+"").toUpperCase()] || "#2a2f3c"; val.style.background=col; val.style.color="#000"; }
-    div.appendChild(lab); div.appendChild(val); container.appendChild(div);
-  }
-
+  // Показване на резултати
   function render(h,stk){
     ["R_HUSB","R_HUBB","R_SB","R_BB"].forEach(id=> document.getElementById(id).innerHTML="");
-    for(const it of GROUPS.HUSB) row(document.getElementById("R_HUSB"), it.label,it.key,h,stk,!!it.neutral);
-    for(const it of GROUPS.HUBB) row(document.getElementById("R_HUBB"), it.label,it.key,h,stk,!!it.neutral);
-    for(const it of GROUPS.SB)   row(document.getElementById("R_SB"),   it.label,it.key,h,stk,!!it.neutral);
-    for(const it of GROUPS.BB)   row(document.getElementById("R_BB"),   it.label,it.key,h,stk,!!it.neutral);
+    const addRow=(container,label,key,neutral)=>{
+      const c=compute(key,h,stk);
+      const row=document.createElement("div"); row.className="card";
+      const lab=document.createElement("div"); lab.className="label"; lab.textContent=label;
+      const val=document.createElement("div"); val.className="val"; val.textContent=c.disp;
+      row.style.background=bg(label,key,c.disp,!!neutral);
+      if(c.color){ val.style.background=c.color; val.style.color="#000"; }
+      else if(c.num){ val.style.background="rgba(0,0,0,.22)"; val.style.color="#fff"; }
+      else{ const col = COLORS[(c.disp+"").toUpperCase()] || COLORS[(c.act+"").toUpperCase()] || '#2a2f3c'; val.style.background=col; val.style.color="#000"; }
+      // click-to-edit
+      row.addEventListener("click", ()=> openEditor(label,key,stk));
+      row.appendChild(lab); row.appendChild(val);
+      document.getElementById(container).appendChild(row);
+    };
+    GROUPS.HUSB.forEach(it=>addRow("R_HUSB",it.label,it.key,it.neutral));
+    GROUPS.HUBB.forEach(it=>addRow("R_HUBB",it.label,it.key,it.neutral));
+    GROUPS.SB  .forEach(it=>addRow("R_SB",  it.label,it.key,it.neutral));
+    GROUPS.BB  .forEach(it=>addRow("R_BB",  it.label,it.key,it.neutral));
   }
 
-  // Hand Builder UI
+  function renderIfReady(){
+    const h=handText(); curHandEl.textContent=h||"—"; curStackEl.textContent=stackR||"—";
+    if(h && stackR){
+      render(h,stackR);
+      // скрий горния stack row за повече място
+      document.getElementById("stackRow").classList.add("hide");
+    }
+  }
+
+  // ---------- Hand Builder ----------
   const hb=document.getElementById("hb");
   document.getElementById("openHB").addEventListener("click", ()=> hb.classList.add("show"));
   document.getElementById("closeHB").addEventListener("click", ()=> hb.classList.remove("show"));
 
+  // Рангове
   const rankGrid=document.getElementById("rankGrid");
   ranks.forEach(r=>{ const b=document.createElement("button"); b.className="rankBtn"; b.textContent=r; b.type="button";
-    b.addEventListener("click", ()=> {
+    b.addEventListener("click", ()=>{
       if(!first){ first=r; b.classList.add("active"); }
-      else if(!second){ second=r; autoCloseIfReady(); }
-      else { first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
-      updateHeader();
+      else if(!second){ second=r; }
+      else{ first=r; second=null; rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); }
+      // ако е чифт → type = pair автоматично
+      if(first && second && first===second){ type="pair"; setTypeButtons("pair"); }
+      maybeCloseHB();
+      renderIfReady();
     });
     rankGrid.appendChild(b);
   });
 
-  const typeRow=document.getElementById("typeRow");
-  typeRow.querySelectorAll(".typeBtn").forEach(btn=>{
-    const t=btn.dataset.type; if(t==="s") btn.classList.add("active");
-    btn.addEventListener("click", ()=>{ type=t; typeRow.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x===btn)); autoCloseIfReady(); updateHeader(); });
-  });
-
-  document.getElementById("clearHand").addEventListener("click", ()=>{
-    first=null; second=null;
-    rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active"));
-    updateHeader();
-  });
-
-  function autoCloseIfReady(){
-    if(first && second){
-      const h=handText(); curHandEl.textContent=h||"—";
-      if(h && stackR) render(h,stackR);
-      hb.classList.remove("show");
-    }
+  // Тип (pair / s / o)
+  function setTypeButtons(t){
+    document.querySelectorAll(".typeBtn").forEach(x=>x.classList.toggle("active", x.dataset.type===t));
   }
-  function updateHeader(){ const h=handText(); curHandEl.textContent=h||"—"; }
-
-  // Stack quick buttons
-  const stackRow=document.getElementById("stackRow");
-  stackRow.querySelectorAll(".stackBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=> {
-      stackR=btn.dataset.s;
-      stackRow.querySelectorAll(".stackBtn").forEach(x=>x.classList.toggle("active", x===btn));
-      curStackEl.textContent = stackR || "—";
-      const h = handText();
-      if(h && stackR) render(h, stackR);
+  document.getElementById("typeRow").querySelectorAll(".typeBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const t=btn.dataset.type; type=t; setTypeButtons(t); maybeCloseHB(); renderIfReady();
     });
   });
 
-  // Open builder initially
+  // Блайндове 1–15 вътре в Hand Builder
+  const bbGrid=document.getElementById("bbGrid");
+  for(let i=1;i<=15;i++){
+    const b=document.createElement("button"); b.className="bbBtn"; b.textContent=String(i); b.type="button";
+    b.addEventListener("click", ()=>{
+      bbChoice=i;
+      bbGrid.querySelectorAll(".bbBtn").forEach(x=>x.classList.toggle("active", x===b));
+      stackR = mapBBtoRange(i);
+      // отрази и в горния (може да е скрит по-късно)
+      const sr=document.getElementById("stackRow");
+      sr.querySelectorAll(".stackBtn").forEach(x=>x.classList.toggle("active", x.dataset.s===stackR));
+      curStackEl.textContent=stackR;
+      maybeCloseHB(); renderIfReady();
+    });
+    bbGrid.appendChild(b);
+  }
+
+  document.getElementById("clearHand").addEventListener("click", ()=>{
+    first=null; second=null; type=null; bbChoice=null; // не чистя stackR нарочно
+    rankGrid.querySelectorAll(".rankBtn").forEach(x=>x.classList.remove("active"));
+    setTypeButtons("");
+    bbGrid.querySelectorAll(".bbBtn").forEach(x=>x.classList.remove("active"));
+    hb.classList.add("show");
+    renderIfReady();
+  });
+
+  function maybeCloseHB(){
+    // Затваря се само ако:
+    // - избрани са два ранга +
+    //   * при чифт: type = pair (автоматично)
+    //   * при не-чифт: type е избрано (s или o)
+    // - избран е и блайнд (1–15) → stackR е определен
+    if(first && second && bbChoice){
+      if(first===second && type==="pair"){ hb.classList.remove("show"); return; }
+      if(first!==second && (type==="s"||type==="o")){ hb.classList.remove("show"); return; }
+    }
+  }
+
+  // ---------- Горен stack row (ако го ползваш вместо 1–15) ----------
+  document.getElementById("stackRow").querySelectorAll(".stackBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      stackR=btn.dataset.s;
+      document.querySelectorAll(".stackBtn").forEach(x=>x.classList.toggle("active", x===btn));
+      curStackEl.textContent=stackR||"—";
+      renderIfReady();
+    });
+  });
+
+  // ---------- Editor overlay (textarea) ----------
+  const editModal=document.getElementById("editModal");
+  const editTitle=document.getElementById("editTitle");
+  const editArea=document.getElementById("editArea");
+  const editClose=document.getElementById("editClose");
+  const editSave=document.getElementById("editSave");
+  const editClear=document.getElementById("editClear");
+  let editCtx=null;
+
+  function openEditor(label,key,stk){
+    editCtx={key,stk};
+    editTitle.textContent=`Редакция: ${label} × ${stk}`;
+    editArea.value=get(key,stk)||"";
+    editModal.classList.add("show");
+    editArea.focus();
+  }
+  function closeEditor(){ editModal.classList.remove("show"); editCtx=null; }
+  editClose.addEventListener("click", closeEditor);
+  editSave.addEventListener("click", ()=>{
+    if(!editCtx) return;
+    set(editCtx.key, editCtx.stk, editArea.value);
+    closeEditor();
+    renderIfReady();
+  });
+  editClear.addEventListener("click", ()=>{
+    if(!editCtx) return;
+    if(confirm("Да изчистя ли напълно тази клетка?")){ set(editCtx.key, editCtx.stk, ""); closeEditor(); renderIfReady(); }
+  });
+
+  // Отвори Hand Builder при първо зареждане
   hb.classList.add("show");
 })();
 </script>
